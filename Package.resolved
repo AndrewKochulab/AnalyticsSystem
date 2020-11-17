@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "Bugsnag",
+        "repositoryURL": "https://github.com/bugsnag/bugsnag-cocoa.git",
+        "state": {
+          "branch": null,
+          "revision": "d2560bbc5d672727368015284a44adc26d6ae4d8",
+          "version": "6.2.4"
+        }
+      },
+      {
         "package": "Mixpanel",
         "repositoryURL": "https://github.com/mixpanel/mixpanel-swift.git",
         "state": {
