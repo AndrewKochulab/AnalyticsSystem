@@ -14,7 +14,7 @@ open class MixpanelTracker<EventsFactory: AnalyticsTrackerFactory>: FactoryAnaly
     
     // MARK: - Types
     
-    open enum UserAttribute: String {
+    public enum UserAttribute: String {
         case firstName = "first_name"
         case lastName = "last_name"
         case emailAddress = "email_address"
@@ -77,20 +77,6 @@ open class MixpanelTracker<EventsFactory: AnalyticsTrackerFactory>: FactoryAnaly
             event: eventBuilder.name,
             properties: eventAttributes(from: eventBuilder.attributes)
         )
-    }
-    
-    open override func isAvailable(eventType: AnalyticsEventType) -> Bool {
-        switch eventType {
-            case .signIn,
-                 .signUp:
-                return true
-                
-            case .crashRecovery:
-                return false
-                
-            default:
-                return false
-        }
     }
     
     
