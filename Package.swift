@@ -5,24 +5,47 @@ import PackageDescription
 
 let package = Package(
     name: "AnalyticsSystem",
+    platforms: [.iOS(.v9), .macOS(.v10_12), .tvOS(.v10), .watchOS(.v6)],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
+        .library(
+            name: "MixpanelProvider",
+            targets: ["MixpanelProvider"]
+        ),
         .library(
             name: "AnalyticsSystem",
-            targets: ["AnalyticsSystem"]),
+            targets: ["AnalyticsSystem"]
+        ),
     ],
     dependencies: [
-        // Dependencies declare other packages that this package depends on.
-        // .package(url: /* package url */, from: "1.0.0"),
+         .package(
+            name: "Mixpanel",
+            url: "https://github.com/mixpanel/mixpanel-swift.git",
+            from: "2.0.0"
+         ),
     ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "AnalyticsSystem",
-            dependencies: []),
+            path: "Sources/AnalyticsSystem"
+        ),
         .testTarget(
             name: "AnalyticsSystemTests",
-            dependencies: ["AnalyticsSystem"]),
+            dependencies: ["AnalyticsSystem"]
+        ),
+        .target(
+            name: "MixpanelProvider",
+            dependencies: [
+                "AnalyticsSystem",
+                .product(
+                    name: "Mixpanel",
+                    package: "Mixpanel",
+                    condition: .when(platforms: [.iOS])
+                )
+            ],
+            path: "Sources/MixpanelProvider",
+            swiftSettings: [
+                .define("DECIDE", .when(platforms: [.iOS])),
+            ]
+        )
     ]
 )
