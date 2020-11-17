@@ -23,15 +23,35 @@ open class MixpanelTracker<EventsFactory: AnalyticsTrackerFactory>: FactoryAnaly
     
     // MARK: - Properties
     
+    private let apiToken: String
+    
     open var mixpanel: MixpanelInstance {
         Mixpanel.mainInstance()
+    }
+    
+    
+    // MARK: - Initialization
+    
+    public required init(
+        apiToken: String,
+        eventsFactory: EventsFactory = .init()
+    ) {
+        self.apiToken = apiToken
+        
+        super.init(eventsFactory: eventsFactory)
+    }
+    
+    public required init(
+        eventsFactory: EventsFactory
+    ) {
+        fatalError("Please use initializer with apiToken")
     }
     
     
     // MARK: - Configuration
     
     open override func initialize(with options: LaunchOptions? = nil) {
-        Mixpanel.initialize(token: "token")
+        Mixpanel.initialize(token: apiToken)
     }
     
     open override func setEnabled(_ isEnabled: Bool) {
