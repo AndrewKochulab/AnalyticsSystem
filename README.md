@@ -25,7 +25,7 @@ import AnalyticsSystem
 let analyticsService = AnalyticsSystem()
     
 try analyticsSystem.configureTrackers { cfg in 
-	let commonEventsFactory = AnalyticsTrackerEventsFactory()
+  let commonEventsFactory = AnalyticsTrackerEventsFactory()
 
   try cfg.addTracker(MixpanelTracker(apiToken: "your_api_token", eventsFactory: commonEventsFactory))
   try cfg.addTracker(BugsnagTracker(apiToken: "your_api_token", eventsFactory: commonEventsFactory))
@@ -40,36 +40,36 @@ analyticsSystem.initialize()
 
 ````swift
 enum RegistrationEventMethod: String {
-	case email = "Email",
-	facebook = "Facebook",
-	twitter = "Twitter"
+  case email = "Email",
+  facebook = "Facebook",
+  twitter = "Twitter"
 }
 	
 struct SignUpEvent: AnalyticsEvent {
-	let userId: String
-	let method: RegistrationEventMethod 
-	var type: AnalyticsEventType { .signUp }
-    
-	init(
-		userId: String,
-		method: RegistrationEventMethod
-	) {
-        self.userId = userId
-        self.method = method
-    }
+  let userId: String
+  let method: RegistrationEventMethod 
+  var type: AnalyticsEventType { .signUp }
+     
+  init(
+    userId: String,
+    method: RegistrationEventMethod
+  ) {
+    self.userId = userId
+    self.method = method
+  }
 }
 	
 extension AnalyticsTrackerEventsFactory {
-	// ...
-	func signUpEventBuilder(event: SignUpEvent) -> AnalyticsEventBuilder { 
-		.init(
-			name: "sign_up",
-			attributes: [
-				"user_id" : event.userId,
-	            "method" : event.method.rawValue
-			]
-		)
-	}
+  // ...
+  func signUpEventBuilder(event: SignUpEvent) -> AnalyticsEventBuilder { 
+    .init(
+      name: "sign_up",
+      attributes: [
+        "user_id" : event.userId,
+        "method" : event.method.rawValue
+      ]
+    )
+  }
 }
 ````
 
@@ -77,10 +77,10 @@ extension AnalyticsTrackerEventsFactory {
 
 ````swift
 analyticsService.track(
-	event: SignUpEvent(
-		userId: "user_identifier",
-		method: .email
-	)
+  event: SignUpEvent(
+    userId: "user_identifier",
+    method: .email
+  )
 )
 
 analyticsService.track(event: CrashRecoveryEvent())
@@ -91,15 +91,15 @@ analyticsService.track(event: OnboardingFinishEvent())
 
 ````swift
 final class FacebookTrackerEventsFactory: AnalyticsTrackerEventsFactory {   
-	override func signUpEventBuilder(event: SignUpEvent) -> AnalyticsEventBuilder {
-		.init(
-		    name: AppEvents.Name.completedRegistration.rawValue,
-	        attributes: [
-				"user_id" : event.userId.rawValue,
-		         AppEvents.ParameterName.registrationMethod.rawValue : event.method.rawValue
-			]
-		)
-	}
+  override func signUpEventBuilder(event: SignUpEvent) -> AnalyticsEventBuilder {
+    .init(
+      name: AppEvents.Name.completedRegistration.rawValue,
+      attributes: [
+        "user_id" : event.userId.rawValue,
+        AppEvents.ParameterName.registrationMethod.rawValue : event.method.rawValue
+      ]
+    )
+  }
 }
 ````
 
