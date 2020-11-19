@@ -14,7 +14,7 @@ Simplify your app analytics with multiple built-in providers.
 
   s.source           = {
     :git => 'https://github.com/AndrewKochulab/AnalyticsSystem.git',
-    :branch => 'master'
+    :tag => s.version.to_s
   }
 
   s.social_media_url = 'https://github.com/AndrewKochulab'
