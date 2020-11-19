@@ -52,7 +52,7 @@ Simplify your app analytics with multiple built-in providers.
 
   s.subspec 'Mixpanel' do |ss|
     ss.dependency 'AnalyticsSystem/Core'
-    ss.dependency 'Mixpanel', '~> 3.1'
+    ss.dependency 'Mixpanel', '~> 2.8.0'
     ss.source_files = 'Sources/MixpanelProvider/MixpanelTracker.swift'
   end
 
