@@ -16,9 +16,13 @@ let package = Package(
             targets: ["BugsnagProvider"]
         ),
         .library(
+            name: "FacebookProvider",
+            targets: ["FacebookProvider"]
+        ),
+        .library(
             name: "AnalyticsSystem",
             targets: ["AnalyticsSystem"]
-        ),
+        )
     ],
     dependencies: [
          .package(
@@ -31,6 +35,11 @@ let package = Package(
             url: "https://github.com/bugsnag/bugsnag-cocoa.git",
             from: "6.0.0"
         ),
+        .package(
+            name: "Facebook",
+            url: "https://github.com/facebook/facebook-ios-sdk.git",
+            .branch("master")
+        )
     ],
     targets: [
         .target(
@@ -66,6 +75,21 @@ let package = Package(
                 )
             ],
             path: "Sources/BugsnagProvider"
+        ),
+        .target(
+            name: "FacebookProvider",
+            dependencies: [
+                "AnalyticsSystem",
+                .product(
+                    name: "FacebookCore",
+                    package: "Facebook",
+                    condition: .when(platforms: [.iOS])
+                )
+            ],
+            path: "Sources/FacebookProvider",
+            swiftSettings: [
+                .define("DECIDE", .when(platforms: [.iOS])),
+            ]
         )
     ]
 )

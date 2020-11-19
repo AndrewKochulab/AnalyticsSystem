@@ -11,6 +11,15 @@
         }
       },
       {
+        "package": "Facebook",
+        "repositoryURL": "https://github.com/facebook/facebook-ios-sdk.git",
+        "state": {
+          "branch": "master",
+          "revision": "f2d3e6590f9fc04f1d7f5a9ec1c39e94f016fdbd",
+          "version": null
+        }
+      },
+      {
         "package": "Mixpanel",
         "repositoryURL": "https://github.com/mixpanel/mixpanel-swift.git",
         "state": {
