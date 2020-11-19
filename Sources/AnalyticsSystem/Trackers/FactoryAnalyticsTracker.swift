@@ -27,6 +27,7 @@ open class FactoryAnalyticsTracker<EventsFactory: AnalyticsTrackerFactory>: Anal
     // MARK: - Properties
     
     public let eventsFactory: EventsFactory
+    public var isEventAvailable: IsEventAvailable = { _ in true }
     
     
     // MARK: - Initialization
@@ -81,7 +82,7 @@ open class FactoryAnalyticsTracker<EventsFactory: AnalyticsTrackerFactory>: Anal
     }
     
     open func isAvailable(eventType: AnalyticsEventType) -> Bool {
-        true
+        isEventAvailable(eventType)
     }
     
     
