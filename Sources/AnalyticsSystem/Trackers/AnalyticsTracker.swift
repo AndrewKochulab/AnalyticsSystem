@@ -21,6 +21,13 @@ public protocol AnalyticsTracker {
     typealias LaunchOptions = [String : Any]
     #endif
     
+    typealias IsEventAvailable = (_ eventType: AnalyticsEventType) -> Bool
+    
+    
+    // MARK: - Properties
+    
+    var isEventAvailable: IsEventAvailable { get set }
+    
     
     // MARK: - Configuration
     
