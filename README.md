@@ -108,6 +108,45 @@ final class FacebookTrackerEventsFactory: AnalyticsTrackerEventsFactory {
 }
 ````
 
+#### Create own analytics provider
+
+````swift
+import AnalyticsSystem
+import FirebaseAnalytics
+import FirebaseCrashlytics
+
+final class FirebaseTracker: FactoryAnalyticsTracker<AnalyticsTrackerEventsFactory> {
+  private var crashlytics: Crashlytics {
+    .crashlytics()
+  }
+    
+  override func initialize(with options: LaunchOptions? = nil) {
+    FirebaseApp.configure()
+  }
+    
+  override func setEnabled(_ isEnabled: Bool) {
+    Analytics.setAnalyticsCollectionEnabled(isEnabled)
+  }
+    
+  override func logIn(user: AnalyticsUser) {
+    Analytics.setUserID(user.id)
+    crashlytics.setUserID(user.id)
+  }
+    
+  override func logOut(user: AnalyticsUser) {
+    Analytics.setUserID(nil)
+    crashlytics.setUserID("")
+  }
+  
+  override func track(eventBuilder: AnalyticsEventBuilder) {
+    Analytics.logEvent(
+      eventBuilder.name,
+      parameters: eventBuilder.attributes
+    )
+  }
+}
+````
+
 ## License
 
 This code is distributed under the MIT license. See the  `LICENSE`  file for more info.
