@@ -19,8 +19,6 @@ Simplify your app analytics with multiple built-in providers.
 
   s.social_media_url = 'https://github.com/AndrewKochulab'
   s.ios.deployment_target = '10.0'
-  s.osx.deployment_target = '10.12'
-  s.tvos.deployment_target = '10.0'
 
   s.cocoapods_version = '>= 1.4.0'
   s.swift_version = '5.2'
