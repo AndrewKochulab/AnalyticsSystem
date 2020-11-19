@@ -9,7 +9,7 @@ Simplify your app analytics with multiple built-in providers.
                        DESC
 
   s.homepage         = 'https://github.com/AndrewKochulab/AnalyticsSystem'
-  s.license          = 'MIT'
+  s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.authors          = 'Andrew Kochulab'
 
   s.source           = {
