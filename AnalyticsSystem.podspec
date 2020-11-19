@@ -46,7 +46,7 @@ Simplify your app analytics with multiple built-in providers.
   
   s.subspec 'Firebase' do |ss|
     ss.dependency 'AnalyticsSystem/Core'
-    ss.dependency 'Firebase', '6.23.0'
+    ss.dependency 'Firebase'
     ss.dependency 'Firebase/Analytics'
     ss.dependency 'Firebase/Crashlytics'
     ss.source_files = 'Sources/FirebaseProvider/FirebaseTracker.swift'
