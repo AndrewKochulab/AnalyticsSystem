@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "AnalyticsSystem",
-    platforms: [.iOS("9.3"), .macOS(.v10_12), .tvOS(.v10), .watchOS(.v6)],
+    platforms: [.iOS("10.0"), .macOS(.v10_12), .tvOS(.v10), .watchOS(.v6)],
     products: [
         .library(
             name: "MixpanelProvider",
