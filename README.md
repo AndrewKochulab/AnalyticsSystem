@@ -15,7 +15,9 @@ An `AnalyticsSystem` helps you easily add multiple providers in 10 lines of code
 
 To add `AnalyticsSystem` to a  [Swift Package Manager](https://swift.org/package-manager/)  based project, add:
 
-> .package(url: "https://github.com/AndrewKochulab/AnalyticsSystem")
+````swift
+.package(url: "https://github.com/AndrewKochulab/AnalyticsSystem.git")
+````
 
 ### Example
 
