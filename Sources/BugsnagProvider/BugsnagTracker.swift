@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  BugsnagTracker.swift
 //  
 //
 //  Created by Andrew Kochulab on 17.11.2020.
