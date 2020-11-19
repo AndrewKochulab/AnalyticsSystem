@@ -29,8 +29,13 @@ try analyticsSystem.configureTrackers { cfg in
 
   try cfg.addTracker(MixpanelTracker(apiToken: "your_api_token", eventsFactory: commonEventsFactory))
   try cfg.addTracker(BugsnagTracker(apiToken: "your_api_token", eventsFactory: commonEventsFactory))
-        
-  try cfg.addTracker(FacebookTracker(eventsFactory: FacebookTrackerEventsFactory())
+
+  let fbTracker = FacebookTracker(eventsFactory: FacebookTrackerEventsFactory())
+  fbTracker.isEventAvailable = { eventType in
+    eventType == .signUp
+  }
+            
+  try cfg.addTracker(fbTracker)
 }
 	
 analyticsSystem.initialize()
