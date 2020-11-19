@@ -20,6 +20,10 @@ let package = Package(
             targets: ["FacebookProvider"]
         ),
         .library(
+            name: "FirebaseProvider",
+            targets: ["FirebaseProvider"]
+        ),
+        .library(
             name: "AnalyticsSystem",
             targets: ["AnalyticsSystem"]
         )
@@ -38,6 +42,11 @@ let package = Package(
         .package(
             name: "Facebook",
             url: "https://github.com/facebook/facebook-ios-sdk.git",
+            .branch("master")
+        ),
+        .package(
+            name: "Firebase",
+            url: "https://github.com/firebase/firebase-ios-sdk.git",
             .branch("master")
         )
     ],
@@ -62,7 +71,7 @@ let package = Package(
             ],
             path: "Sources/MixpanelProvider",
             swiftSettings: [
-                .define("DECIDE", .when(platforms: [.iOS])),
+                .define("DECIDE", .when(platforms: [.iOS]))
             ]
         ),
         .target(
@@ -88,7 +97,27 @@ let package = Package(
             ],
             path: "Sources/FacebookProvider",
             swiftSettings: [
-                .define("DECIDE", .when(platforms: [.iOS])),
+                .define("DECIDE", .when(platforms: [.iOS]))
+            ]
+        ),
+        .target(
+            name: "FirebaseProvider",
+            dependencies: [
+                "AnalyticsSystem",
+                .product(
+                    name: "FirebaseAnalytics",
+                    package: "Firebase",
+                    condition: .when(platforms: [.iOS])
+                ),
+                .product(
+                    name: "FirebaseCrashlytics",
+                    package: "Firebase",
+                    condition: .when(platforms: [.iOS])
+                )
+            ],
+            path: "Sources/FirebaseProvider",
+            swiftSettings: [
+                .define("DECIDE", .when(platforms: [.iOS]))
             ]
         )
     ]
