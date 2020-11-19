@@ -28,7 +28,6 @@ Simplify your app analytics with multiple built-in providers.
   s.default_subspec = 'Core'
 
   s.subspec 'Core' do |ss|
-    ss.dependency 'AnalyticsSystem/Core'
     ss.source_files = 'Sources/AnalyticsSystem/**/*.{swift, h}'
   end
 
