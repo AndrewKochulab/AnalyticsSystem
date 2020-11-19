@@ -26,6 +26,7 @@ Simplify your app analytics with multiple built-in providers.
   s.swift_version = '5.2'
 
   s.default_subspec = 'Core'
+  s.static_framework = true
 
   s.subspec 'Core' do |ss|
     ss.source_files = 'Sources/AnalyticsSystem/**/*.{swift, h}'
