@@ -34,14 +34,12 @@ Simplify your app analytics with multiple built-in providers.
   s.subspec 'Bugsnag' do |ss|
     ss.dependency 'AnalyticsSystem/Core'
     ss.dependency 'Bugsnag'
-    ss.ios.dependency 'AnalyticsBugsnagProvider'
     ss.source_files = 'Sources/BugsnagProvider/BugsnagTracker.swift'
   end
   
   s.subspec 'Facebook' do |ss|
     ss.dependency 'AnalyticsSystem/Core'
     ss.dependency 'FBSDKCoreKit'
-    ss.ios.dependency 'AnalyticsFacebookProvider'
     ss.source_files = 'Sources/FacebookProvider/FacebookTracker.swift'
   end
   
@@ -49,14 +47,12 @@ Simplify your app analytics with multiple built-in providers.
     ss.dependency 'AnalyticsSystem/Core'
     ss.dependency 'FirebaseAnalytics'
     ss.dependency 'FirebaseCrashlytics'
-    ss.ios.dependency 'AnalyticsFirebaseProvider'
     ss.source_files = 'Sources/FirebaseProvider/FirebaseTracker.swift'
   end
 
   s.subspec 'Mixpanel' do |ss|
     ss.dependency 'AnalyticsSystem/Core'
     ss.dependency 'Mixpanel', '~> 3.1'
-    ss.ios.dependency 'AnalyticsMixpanelProvider'
     ss.source_files = 'Sources/MixpanelProvider/MixpanelTracker.swift'
   end
 
