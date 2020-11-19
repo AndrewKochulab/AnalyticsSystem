@@ -8,6 +8,7 @@ An `AnalyticsSystem` helps you easily add multiple providers in 10 lines of code
 - Mixpanel
 - Bugsnag
 - Facebook
+- Firebase
 
 ## How to use
 ### Installation
