@@ -26,7 +26,7 @@ To add `AnalyticsSystem` to a  [Swift Package Manager](https://swift.org/package
 ````swift
 import AnalyticsSystem
 	
-let analyticsService = AnalyticsSystem()
+let analyticsSystem = AnalyticsSystem()
     
 try analyticsSystem.configureTrackers { cfg in 
   let commonEventsFactory = AnalyticsTrackerEventsFactory()
@@ -84,15 +84,15 @@ final class AnalyticsTrackerEventsFactory {
 #### Track events
 
 ````swift
-analyticsService.track(
+analyticsSystem.track(
   event: SignUpEvent(
     userId: "user_identifier",
     method: .email
   )
 )
 
-analyticsService.track(event: CrashRecoveryEvent())
-analyticsService.track(event: OnboardingFinishEvent())
+analyticsSystem.track(event: CrashRecoveryEvent())
+analyticsSystem.track(event: OnboardingFinishEvent())
 ````
 
 #### Update builder for specific provider
