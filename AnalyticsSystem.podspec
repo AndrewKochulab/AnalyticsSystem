@@ -43,19 +43,5 @@ Simplify your app analytics with multiple built-in providers.
     ss.dependency 'FBSDKCoreKit'
     ss.source_files = 'Sources/FacebookProvider/FacebookTracker.swift'
   end
-  
-  s.subspec 'Firebase' do |ss|
-    ss.dependency 'AnalyticsSystem/Core'
-    ss.dependency 'Firebase'
-    ss.dependency 'Firebase/Analytics'
-    ss.dependency 'Firebase/Crashlytics'
-    ss.source_files = 'Sources/FirebaseProvider/FirebaseTracker.swift'
-  end
-
-  s.subspec 'Mixpanel' do |ss|
-    ss.dependency 'AnalyticsSystem/Core'
-    ss.dependency 'Mixpanel', '~> 2.8.0'
-    ss.source_files = 'Sources/MixpanelProvider/MixpanelTracker.swift'
-  end
 
 end
