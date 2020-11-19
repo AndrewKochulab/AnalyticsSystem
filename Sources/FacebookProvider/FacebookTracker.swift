@@ -10,7 +10,7 @@ import Foundation
 import FBSDKCoreKit
 import AnalyticsSystem
 
-final class FacebookTracker<EventsFactory: AnalyticsTrackerFactory>: FactoryAnalyticsTracker<EventsFactory> {
+open class FacebookTracker<EventsFactory: AnalyticsTrackerFactory>: FactoryAnalyticsTracker<EventsFactory> {
     
     // MARK: - Properties
     
