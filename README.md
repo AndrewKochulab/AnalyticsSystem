@@ -7,6 +7,7 @@ The main idea of `AnalyticsSystem` dependency is to provide light API to configu
 An `AnalyticsSystem` helps you easily add multiple providers in 10 lines of code. There is already built-in providers:
 - Mixpanel
 - Bugsnag
+- Facebook
 
 ## How to use
 ### Installation
