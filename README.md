@@ -19,6 +19,19 @@ To add `AnalyticsSystem` to a  [Swift Package Manager](https://swift.org/package
 .package(url: "https://github.com/AndrewKochulab/AnalyticsSystem.git")
 ````
 
+Cocoapods:
+
+````
+pod 'AnalyticsSystem/Core'
+````
+
+You can also import some provider, like:
+
+````
+pod 'AnalyticsSystem/Bugsnag'
+pod 'AnalyticsSystem/Facebook'
+````
+
 ### Example
 
 #### Configure an analytics system
