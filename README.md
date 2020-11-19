@@ -64,8 +64,7 @@ struct SignUpEvent: AnalyticsEvent {
   }
 }
 	
-extension AnalyticsTrackerEventsFactory {
-  // ...
+final class AnalyticsTrackerEventsFactory {
   func signUpEventBuilder(event: SignUpEvent) -> AnalyticsEventBuilder { 
     .init(
       name: "sign_up",
