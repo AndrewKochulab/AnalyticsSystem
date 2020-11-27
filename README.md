@@ -116,7 +116,7 @@ final class FacebookTrackerEventsFactory: AnalyticsTrackerEventsFactory {
     .init(
       name: AppEvents.Name.completedRegistration.rawValue,
       attributes: [
-        "user_id" : event.userId.rawValue,
+        "user_id" : event.userId,
         AppEvents.ParameterName.registrationMethod.rawValue : event.method.rawValue
       ]
     )
