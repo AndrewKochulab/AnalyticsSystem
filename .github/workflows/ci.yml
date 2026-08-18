@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+
+jobs:
+  # The core carries no third-party dependencies, so this job resolves nothing and
+  # runs in seconds.
+  core:
+    name: Core build & test
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show toolchain
+        run: swift --version
+      - name: Assert the default trait set pulls no dependencies
+        run: |
+          swift package resolve
+          if [ -s Package.resolved ]; then
+            echo "::error::Package.resolved is non-empty with default traits."
+            echo "A core-only install must not resolve any third-party package."
+            cat Package.resolved
+            exit 1
+          fi
+          echo "Default install resolves zero third-party dependencies."
+      - run: swift build
+      - run: swift test
+
+  # Proves the cross-platform guards hold. Cross-compiling against each SDK avoids
+  # depending on which simulator runtimes a runner image happens to ship.
+  platforms:
+    name: ${{ matrix.name }}
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: iOS,      sdk: iphonesimulator, triple: arm64-apple-ios15.0-simulator }
+          - { name: tvOS,     sdk: appletvsimulator, triple: arm64-apple-tvos15.0-simulator }
+          - { name: watchOS,  sdk: watchsimulator,   triple: arm64-apple-watchos8.0-simulator }
+          - { name: visionOS, sdk: xrsimulator,      triple: arm64-apple-xros1.0-simulator }
+          - { name: macOS,    sdk: macosx,           triple: arm64-apple-macosx12.0 }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for ${{ matrix.name }}
+        run: |
+          swift build \
+            --sdk "$(xcrun --sdk ${{ matrix.sdk }} --show-sdk-path)" \
+            --triple ${{ matrix.triple }}
+
+  # Every provider body is behind a trait, and Facebook's is behind `os(iOS)` too, so
+  # nothing above compiles a single line of adapter code. This job does — it is the
+  # gate that would have caught v1 shipping against SDK APIs that no longer existed.
+  providers:
+    name: Providers against real SDKs
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.swift', 'IntegrationTests/ProviderBuild/Package.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Type-check each provider on its own
+        run: |
+          for trait in Firebase Facebook Mixpanel Bugsnag; do
+            echo "::group::$trait"
+            swift build --traits "$trait"
+            echo "::endgroup::"
+          done
+
+      - name: Build all providers together for iOS
+        working-directory: IntegrationTests/ProviderBuild
+        run: |
+          xcodebuild build \
+            -scheme ProviderBuild \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -skipMacroValidation \
+            -quiet
+
+  lint:
+    name: SwiftLint
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install swiftlint
+      - run: swiftlint lint --strict
+
+  podspec:
+    name: CocoaPods lint
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint the Core subspec
+        # Only Core is linted here: the provider subspecs would each pull a full
+        # vendor SDK from trunk, which turns a lint into a multi-minute download.
+        # Their sources are already compiled by the `providers` job above.
+        run: pod lib lint AnalyticsSystem.podspec --subspec=Core --allow-warnings

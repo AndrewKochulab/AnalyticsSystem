@@ -1,50 +1,46 @@
-//
-//  ConsoleTracker.swift
-//  AnalyticsSystem
-//
-//  Created by Andrew Kochulab on 17.11.2020.
-//
-
 import Foundation
 
-open class ConsoleTracker<EventsFactory: AnalyticsTrackerFactory>: FactoryAnalyticsTracker<EventsFactory> {
-    
-    // MARK: - Configuration
-    
-    open override func initialize(with options: LaunchOptions? = nil) {
-        print("Console tracker successfully connected")
-    }
-    
-    
-    // MARK: - Auth
-    
-    open override func logIn(user: AnalyticsUser) {
-        print("\(user.firstName ?? "") \(user.lastName ?? "") successfully logged in")
-    }
-    
-    open override func logOut(user: AnalyticsUser) {
-        print("\(user.firstName ?? "") \(user.lastName ?? "") successfully logged out")
-    }
-    
-    
-    // MARK: - Events
-    
-    open override func track(eventBuilder: AnalyticsEventBuilder) {
-        print(eventBuilder.description)
-    }
-    
-    
-    // MARK: - Helpers
-    
-    open func print(
-        _ items: Any...,
-        separator: String = " ",
-        terminator: String = "\n"
+/// Logs analytics activity instead of sending it anywhere.
+///
+/// Useful in debug builds and as a worked example of the ``AnalyticsTracker``
+/// protocol: a stateless `struct`, no base class, no API token, nothing to stub.
+public struct ConsoleTracker: AnalyticsTracker {
+    public let id: AnalyticsTrackerID
+    private let sink: any AnalyticsLogSink
+    private let prefix: String
+
+    public init(
+        id: AnalyticsTrackerID = .console,
+        sink: any AnalyticsLogSink = OSLogSink(),
+        prefix: String = "📱 Analytics"
     ) {
-        Swift.print(
-            items,
-            separator: separator,
-            terminator: terminator
-        )
+        self.id = id
+        self.sink = sink
+        self.prefix = prefix
+    }
+
+    public func start(with context: AnalyticsStartContext) async {
+        let suffix = context.attributes.isEmpty ? "" : " \(context.attributes)"
+        sink.write("\(prefix) started\(suffix)")
+    }
+
+    public func setEnabled(_ isEnabled: Bool) async {
+        sink.write("\(prefix) collection \(isEnabled ? "enabled" : "disabled")")
+    }
+
+    public func identify(anonymousID: AnalyticsID) async {
+        sink.write("\(prefix) anonymous id: \(anonymousID)")
+    }
+
+    public func logIn(user: AnalyticsUser) async {
+        sink.write("\(prefix) log in: \(user.id)")
+    }
+
+    public func logOut() async {
+        sink.write("\(prefix) log out")
+    }
+
+    public func record(_ record: AnalyticsRecord) async {
+        sink.write("\(prefix) event: \(record)")
     }
 }

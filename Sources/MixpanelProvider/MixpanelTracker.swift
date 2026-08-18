@@ -1,127 +1,110 @@
-//
-//  MixpanelTracker.swift
-//  
-//
-//  Created by Andrew Kochulab on 17.11.2020.
-//
+#if Mixpanel
 
-#if os(iOS)
+import AnalyticsSystem
 import Foundation
 import Mixpanel
-import AnalyticsSystem
 
-open class MixpanelTracker<EventsFactory: AnalyticsTrackerFactory>: FactoryAnalyticsTracker<EventsFactory> {
-    
-    // MARK: - Types
-    
-    public enum UserAttribute: String {
-        case firstName = "first_name"
-        case lastName = "last_name"
-        case emailAddress = "email_address"
-    }
-    
-    
-    // MARK: - Properties
-    
+/// Reports to Mixpanel.
+///
+/// Corrects two v1 defects. The API token is required by the only initializer, so the
+/// `fatalError` initializer that existed purely to satisfy an inherited requirement is
+/// gone. And `logOut` now calls `reset()`: v1 cleared only timed events and super
+/// properties, which left the distinct ID in place, so a second user on the same
+/// device was silently correlated with the first.
+public struct MixpanelTracker: AnalyticsTracker {
+    public let id: AnalyticsTrackerID
     private let apiToken: String
-    
-    open var mixpanel: MixpanelInstance {
-        Mixpanel.mainInstance()
-    }
-    
-    
-    // MARK: - Initialization
-    
-    public required init(
+    private let instanceName: String?
+    private let trackAutomaticEvents: Bool
+
+    public init(
+        id: AnalyticsTrackerID = .mixpanel,
         apiToken: String,
-        eventsFactory: EventsFactory = .init()
+        instanceName: String? = nil,
+        trackAutomaticEvents: Bool = false
     ) {
+        self.id = id
         self.apiToken = apiToken
-        
-        super.init(eventsFactory: eventsFactory)
+        self.instanceName = instanceName
+        self.trackAutomaticEvents = trackAutomaticEvents
     }
-    
-    public required init(
-        eventsFactory: EventsFactory
-    ) {
-        fatalError("Please use initializer with apiToken")
+
+    /// `Mixpanel.mainInstance()` traps when nothing has been initialised, so the
+    /// non-trapping accessor is used throughout.
+    private var instance: MixpanelInstance? {
+        if let instanceName {
+            return Mixpanel.getInstance(name: instanceName)
+        }
+        return Mixpanel.safeMainInstance()
     }
-    
-    
-    // MARK: - Configuration
-    
-    open override func initialize(with options: LaunchOptions? = nil) {
-        Mixpanel.initialize(token: apiToken)
+
+    // MARK: AnalyticsTracker
+
+    public func start(with context: AnalyticsStartContext) async {
+        guard instance == nil else { return }
+
+        let options = MixpanelOptions(
+            token: apiToken,
+            instanceName: instanceName,
+            trackAutomaticEvents: trackAutomaticEvents
+        )
+        Mixpanel.initialize(options: options)
     }
-    
-    open override func setEnabled(_ isEnabled: Bool) {
+
+    public func setEnabled(_ isEnabled: Bool) async {
+        guard let instance else { return }
         if isEnabled {
-            mixpanel.optInTracking()
+            instance.optInTracking()
         } else {
-            mixpanel.optOutTracking()
+            instance.optOutTracking()
         }
     }
-    
-    open override func configure(with identifier: AnalyticsID) {
-        mixpanel.identify(
-            distinctId: identifier,
+
+    public func identify(anonymousID: AnalyticsID) async {
+        instance?.identify(distinctId: anonymousID.rawValue, usePeople: true)
+    }
+
+    public func logIn(user: AnalyticsUser) async {
+        guard let instance else { return }
+
+        instance.createAlias(
+            user.id.rawValue,
+            distinctId: instance.distinctId,
             usePeople: true
         )
-    }
-    
-    
-    // MARK: - Auth
-    
-    open override func logIn(user: AnalyticsUser) {
-        mixpanel.createAlias(
-            user.id,
-            distinctId: mixpanel.distinctId,
-            usePeople: true
-        )
-        
-        mixpanel.people.set(
-            properties: userAttributes(from: user)
-        )
-    }
-    
-    open override func logOut(user: AnalyticsUser) {
-        mixpanel.clearTimedEvents()
-        mixpanel.clearSuperProperties()
-    }
-    
-    
-    // MARK: - Events
-    
-    open override func track(eventBuilder: AnalyticsEventBuilder) {
-        mixpanel.track(
-            event: eventBuilder.name,
-            properties: eventAttributes(from: eventBuilder.attributes)
-        )
-    }
-    
-    
-    // MARK: - Converters
-    
-    open func userAttributes(
-        from user: AnalyticsUser
-    ) -> [String : MixpanelType] {
-        return [
-            UserAttribute.firstName.rawValue : user.firstName ?? "",
-            UserAttribute.lastName.rawValue : user.lastName ?? "",
-            UserAttribute.emailAddress.rawValue : user.email ?? ""
-        ]
-    }
-    
-    open func eventAttributes(
-        from attributes: AnalyticsEventAttributes
-    ) -> [String : MixpanelType] {
-        var dict = [String : MixpanelType]()
-        
-        attributes.forEach { key, value in
-            dict[key] = value as? MixpanelType
+        instance.identify(distinctId: user.id.rawValue, usePeople: true)
+
+        let properties = user.mixpanelProperties
+        if !properties.isEmpty {
+            instance.people.set(properties: properties)
         }
-        
-        return dict
+    }
+
+    public func logOut() async {
+        guard let instance else { return }
+        instance.clearTimedEvents()
+        instance.clearSuperProperties()
+        // The identity reset v1 omitted.
+        instance.reset()
+    }
+
+    public func record(_ record: AnalyticsRecord) async {
+        instance?.track(event: record.name, properties: record.payload.mixpanelProperties)
     }
 }
+
+#else
+
+import Foundation
+
+@available(
+    *,
+    unavailable,
+    message: """
+    MixpanelTracker requires the "Mixpanel" package trait. Add it to your dependency:
+    .package(url: "https://github.com/AndrewKochulab/AnalyticsSystem.git", from: "2.0.0", traits: ["Mixpanel"])
+    """
+)
+public enum MixpanelTracker {}
+
 #endif
