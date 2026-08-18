@@ -1,4 +1,4 @@
-#if Firebase && (os(iOS) || os(macOS) || os(tvOS) || os(visionOS))
+#if Firebase && (os(iOS) || os(macOS) || os(tvOS))
 
 import AnalyticsSystem
 import FirebaseAnalytics
@@ -80,7 +80,7 @@ import Foundation
 @available(
     *,
     unavailable,
-    message: "FirebaseTracker requires iOS, macOS, tvOS or visionOS. Firebase Analytics has no watchOS support."
+    message: "FirebaseTracker requires iOS, macOS or tvOS. Firebase Analytics supports neither watchOS nor visionOS."
 )
 public enum FirebaseTracker {}
 

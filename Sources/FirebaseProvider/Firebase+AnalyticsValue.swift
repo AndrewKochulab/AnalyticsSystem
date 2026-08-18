@@ -1,4 +1,4 @@
-#if Firebase && (os(iOS) || os(macOS) || os(tvOS) || os(visionOS))
+#if Firebase && (os(iOS) || os(macOS) || os(tvOS))
 
 import AnalyticsSystem
 import Foundation

@@ -118,6 +118,42 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/docs"
 
+  # The blind spot that let a broken Firebase/visionOS combination ship in 2.0.0
+  # and 2.1.0: `platforms` builds every platform but with NO traits, and
+  # `providers` builds every trait but only for the macOS host. Neither compiles
+  # a provider adapter for a non-host platform, which is exactly where a vendor's
+  # own platform gating bites.
+  provider-platforms:
+    name: ${{ matrix.trait }} on ${{ matrix.platform }}
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        trait: [Firebase, Facebook, Mixpanel, Bugsnag]
+        platform: [iOS, tvOS, watchOS, visionOS, macOS]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+      - name: Build ${{ matrix.trait }} for ${{ matrix.platform }}
+        run: |
+          case "${{ matrix.platform }}" in
+            iOS)      SDK=iphonesimulator;  TRIPLE=arm64-apple-ios15.0-simulator ;;
+            tvOS)     SDK=appletvsimulator; TRIPLE=arm64-apple-tvos15.0-simulator ;;
+            watchOS)  SDK=watchsimulator;   TRIPLE=arm64-apple-watchos8.0-simulator ;;
+            visionOS) SDK=xrsimulator;      TRIPLE=arm64-apple-xros1.0-simulator ;;
+            macOS)    SDK=macosx;           TRIPLE=arm64-apple-macosx12.0 ;;
+          esac
+          swift build --traits "${{ matrix.trait }}" \
+            --sdk "$(xcrun --sdk "$SDK" --show-sdk-path)" \
+            --triple "$TRIPLE"
+
   lint:
     name: SwiftLint
     runs-on: macos-26
