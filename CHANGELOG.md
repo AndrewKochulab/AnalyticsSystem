@@ -5,6 +5,28 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-08-19
+
+### Fixed
+
+- **`FirebaseProvider` did not compile for visionOS.** The package advertised visionOS
+  for the Firebase adapter, but Firebase gates `FirebaseAnalytics` to
+  iOS/macCatalyst/macOS/tvOS — so enabling the `Firebase` trait on a visionOS target
+  failed with `no such module 'FirebaseAnalytics'`. Present in 2.0.0 and 2.1.0. The
+  adapter now declares the platforms Firebase actually supports.
+- **CocoaPods: the `Firebase`, `Mixpanel` and `Bugsnag` subspecs claimed visionOS**
+  while the vendors' own podspecs do not, so `pod lib lint` failed. Each subspec now
+  declares the platform set its dependency supports. (Mixpanel and Bugsnag do build for
+  visionOS under SwiftPM; only their CocoaPods specs omit it.)
+
+### Added
+
+- **A `provider-platforms` CI job** covering all 20 provider × platform combinations.
+  This is the gap that let the bug ship: `platforms` built every platform but with no
+  traits enabled, and `providers` built every trait but only for the macOS host, so no
+  adapter was ever compiled for a non-host platform — which is precisely where a
+  vendor's own platform gating bites.
+
 ## [2.1.0] - 2026-08-18
 
 Additive throughout — 2.0.0 code keeps compiling. The two fixes below are behaviour
@@ -149,6 +171,7 @@ A full rewrite. 2.0.0 is a breaking release; see [MIGRATION.md](MIGRATION.md).
 
 Initial release.
 
+[2.1.1]: https://github.com/AndrewKochulab/AnalyticsSystem/compare/2.1.0...2.1.1
 [2.1.0]: https://github.com/AndrewKochulab/AnalyticsSystem/compare/2.0.0...2.1.0
 [2.0.0]: https://github.com/AndrewKochulab/AnalyticsSystem/compare/1.0.0...2.0.0
 [1.0.0]: https://github.com/AndrewKochulab/AnalyticsSystem/releases/tag/1.0.0

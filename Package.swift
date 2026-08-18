@@ -98,16 +98,22 @@ let package = Package(
                 .product(
                     name: "FirebaseAnalytics",
                     package: "firebase-ios-sdk",
+                    // Firebase gates FirebaseAnalytics to iOS/macCatalyst/macOS/tvOS.
+                    // Claiming visionOS here compiles the adapter against a module
+                    // that is not there.
                     condition: .when(
-                        platforms: [.iOS, .macOS, .tvOS, .visionOS],
+                        platforms: [.iOS, .macOS, .tvOS],
                         traits: [ProviderTrait.firebase]
                     )
                 ),
                 .product(
                     name: "FirebaseCrashlytics",
                     package: "firebase-ios-sdk",
+                    // Firebase gates FirebaseAnalytics to iOS/macCatalyst/macOS/tvOS.
+                    // Claiming visionOS here compiles the adapter against a module
+                    // that is not there.
                     condition: .when(
-                        platforms: [.iOS, .macOS, .tvOS, .visionOS],
+                        platforms: [.iOS, .macOS, .tvOS],
                         traits: [ProviderTrait.firebase]
                     )
                 )

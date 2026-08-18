@@ -20,7 +20,7 @@ Fan analytics events out to any number of providers behind one small API.
 
 | Provider | Trait | Platforms | Crash reporting |
 |---|---|---|---|
-| Firebase Analytics + Crashlytics | `Firebase` | iOS, macOS, tvOS, visionOS | ✅ |
+| Firebase Analytics + Crashlytics | `Firebase` | iOS, macOS, tvOS | ✅ |
 | Facebook App Events | `Facebook` | iOS | — |
 | Mixpanel | `Mixpanel` | all | — |
 | Bugsnag | `Bugsnag` | all | ✅ |

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'AnalyticsSystem'
-  s.version          = '2.1.0'
+  s.version          = '2.1.1'
   s.summary          = 'Multi-provider analytics for Apple platforms, with a dependency-free core.'
 
   s.description      = <<-DESC
@@ -49,10 +49,9 @@ subspec. Built for Swift 6 strict concurrency.
     ss.pod_target_xcconfig = {
       'SWIFT_ACTIVE_COMPILATION_CONDITIONS' => '$(inherited) Firebase'
     }
-    # Firebase Analytics has no watchOS support.
-    ss.ios.deployment_target  = '15.0'
-    ss.osx.deployment_target  = '12.0'
-    ss.tvos.deployment_target = '15.0'
+    # Firebase Analytics supports neither watchOS nor visionOS, so this subspec
+    # must declare a narrower platform set than the root spec.
+    ss.platforms = { :ios => '15.0', :osx => '12.0', :tvos => '15.0' }
   end
 
   s.subspec 'Facebook' do |ss|
@@ -73,6 +72,9 @@ subspec. Built for Swift 6 strict concurrency.
     ss.pod_target_xcconfig = {
       'SWIFT_ACTIVE_COMPILATION_CONDITIONS' => '$(inherited) Mixpanel'
     }
+    # The Mixpanel-swift podspec does not declare visionOS, even though its
+    # SwiftPM manifest builds there.
+    ss.platforms = { :ios => '15.0', :osx => '12.0', :tvos => '15.0', :watchos => '8.0' }
   end
 
   s.subspec 'Bugsnag' do |ss|
@@ -82,5 +84,7 @@ subspec. Built for Swift 6 strict concurrency.
     ss.pod_target_xcconfig = {
       'SWIFT_ACTIVE_COMPILATION_CONDITIONS' => '$(inherited) Bugsnag'
     }
+    # Likewise, the Bugsnag podspec does not declare visionOS.
+    ss.platforms = { :ios => '15.0', :osx => '12.0', :tvos => '15.0', :watchos => '8.0' }
   end
 end
