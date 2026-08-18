@@ -26,6 +26,13 @@ public protocol AnalyticsTracker: Sendable {
 
     func logOut() async
 
+    /// Ask the underlying SDK to send anything it has buffered.
+    ///
+    /// Distinct from ``AnalyticsSystem/flush()``, which only drains this library's
+    /// own queue. Most SDKs batch on their own schedule, so an app being backgrounded
+    /// or about to terminate wants this.
+    func flushPendingEvents() async
+
     /// Report an already-mapped record. Mapping is the system's responsibility, so
     /// trackers never see raw events.
     func record(_ record: AnalyticsRecord) async
@@ -37,4 +44,5 @@ public extension AnalyticsTracker {
     func identify(anonymousID: AnalyticsID) async {}
     func logIn(user: AnalyticsUser) async {}
     func logOut() async {}
+    func flushPendingEvents() async {}
 }

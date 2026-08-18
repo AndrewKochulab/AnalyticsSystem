@@ -4,6 +4,7 @@
 [![Swift 6.1](https://img.shields.io/badge/Swift-6.1-orange.svg)](https://swift.org)
 [![Platforms](https://img.shields.io/badge/platforms-iOS%2015%20%7C%20macOS%2012%20%7C%20tvOS%2015%20%7C%20watchOS%208%20%7C%20visionOS%201-lightgrey.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-DocC-informational.svg)](https://andrewkochulab.github.io/AnalyticsSystem/documentation/analyticssystem)
 
 Fan analytics events out to any number of providers behind one small API.
 
@@ -13,6 +14,7 @@ Fan analytics events out to any number of providers behind one small API.
 - **Built for Swift 6 strict concurrency.** No `@unchecked Sendable`, no locks in your code, no main-thread work.
 - **`track` is synchronous.** Call it from a view model, a background task, anywhere. No `await`.
 - **Ordering is guaranteed.** A `logIn` followed by a `track` reaches every provider in that order.
+- **Nothing fails silently.** Every event the system buffers, drops, rejects or rewrites is reported to a diagnostics handler.
 
 ## Providers
 
@@ -108,6 +110,55 @@ analytics.track(SignUpEvent(userID: "user-1", method: .email))
 ```
 
 That's it — synchronous, non-throwing, callable from any isolation domain.
+
+Events tracked before `start()` are held and replayed once it completes, so launch-time
+events are neither lost nor handed to an SDK that has not been configured yet. See
+[`AnalyticsStartupBuffer`](https://andrewkochulab.github.io/AnalyticsSystem/documentation/analyticssystem/analyticsstartupbuffer).
+
+### Attributes on every event
+
+```swift
+await analytics.setGlobalProperties([
+    "app_version": "2.1.0",
+    "locale": "en_US",
+])
+```
+
+Event attributes win on key conflict, so an event can always override a global.
+
+### Seeing what you lose
+
+Analytics failures are invisible by default — a dropped event looks exactly like one
+that was never sent. A diagnostics handler makes them observable:
+
+```swift
+let analytics = AnalyticsSystem(
+    configuration: .init(
+        diagnostics: { diagnostic in
+            logger.warning("analytics: \(diagnostic)")
+        }
+    )
+)
+```
+
+### Enforcing a provider's limits
+
+Firebase silently discards events that break its rules — names over 40 characters,
+more than 25 parameters, reserved prefixes. Running those rules locally turns a
+vanished event into a diagnostic:
+
+```swift
+try await analytics.register(FirebaseTracker(), validator: .firebase)
+```
+
+### Flushing before the app goes away
+
+`flush()` drains this library's queue; `flushProviders()` asks each vendor SDK to send
+what it has batched — that's the one you want when backgrounding.
+
+```swift
+await analytics.flushProviders()
+```
 
 ### Sending only some events to a provider
 
@@ -209,6 +260,10 @@ analytics.track(SignUpEvent(userID: "1", method: .email))
 await analytics.flush()   // returns only once every provider has been called
 ```
 
+## Documentation
+
+Full API reference: **[andrewkochulab.github.io/AnalyticsSystem](https://andrewkochulab.github.io/AnalyticsSystem/documentation/analyticssystem)**
+
 ## Migrating from 1.0.0
 
 2.0.0 is a deliberate breaking release — see [MIGRATION.md](MIGRATION.md) for a
@@ -216,8 +271,8 @@ symbol-by-symbol map. 1.0.0 is untouched and remains installable.
 
 ## Contributing
 
-Bug reports and pull requests are welcome. `swift test` should be green and
-`swiftlint lint --strict` clean before you open one.
+Bug reports and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+`swift test` should be green and `swiftlint lint --strict` clean before you open one.
 
 ⭐️ If you find this useful, star the repo.
 

@@ -13,6 +13,7 @@ actor SpyTracker: AnalyticsTracker, CrashReportingTracker {
         case logIn(AnalyticsUser)
         case logOut
         case record(AnalyticsRecord)
+        case flushPendingEvents
     }
 
     nonisolated let id: AnalyticsTrackerID
@@ -53,6 +54,10 @@ actor SpyTracker: AnalyticsTracker, CrashReportingTracker {
 
     func logOut() async {
         calls.append(.logOut)
+    }
+
+    func flushPendingEvents() async {
+        calls.append(.flushPendingEvents)
     }
 
     func record(_ record: AnalyticsRecord) async {

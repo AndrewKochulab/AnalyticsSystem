@@ -91,6 +91,10 @@ public struct MixpanelTracker: AnalyticsTracker {
     public func record(_ record: AnalyticsRecord) async {
         instance?.track(event: record.name, properties: record.payload.mixpanelProperties)
     }
+
+    public func flushPendingEvents() async {
+        instance?.flush()
+    }
 }
 
 #else

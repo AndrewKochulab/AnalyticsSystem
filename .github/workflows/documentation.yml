@@ -1,0 +1,61 @@
+name: Documentation
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+
+jobs:
+  build:
+    name: Build DocC
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deliberately built with xcodebuild rather than swift-docc-plugin: the plugin
+      # would appear in a default `swift package resolve`, and this package promises
+      # that a core-only install pulls no third-party dependencies at all.
+      - name: Build documentation archive
+        run: |
+          xcodebuild docbuild \
+            -scheme AnalyticsSystem \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/docs"
+
+      - name: Transform for static hosting
+        run: |
+          ARCHIVE=$(find "$RUNNER_TEMP/docs" -name '*.doccarchive' -maxdepth 4 | head -1)
+          echo "Using $ARCHIVE"
+          $(xcrun --find docc) process-archive transform-for-static-hosting \
+            "$ARCHIVE" \
+            --hosting-base-path AnalyticsSystem \
+            --output-path _site
+          # Land visitors on the documentation root rather than a 404.
+          echo '<script>window.location.href="/AnalyticsSystem/documentation/analyticssystem"</script>' > _site/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
