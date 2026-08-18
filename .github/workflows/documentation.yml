@@ -22,7 +22,7 @@ jobs:
     name: Build DocC
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Deliberately built with xcodebuild rather than swift-docc-plugin: the plugin
       # would appear in a default `swift package resolve`, and this package promises
@@ -45,7 +45,7 @@ jobs:
           # Land visitors on the documentation root rather than a 404.
           echo '<script>window.location.href="/AnalyticsSystem/documentation/analyticssystem"</script>' > _site/index.html
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
@@ -58,4 +58,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
