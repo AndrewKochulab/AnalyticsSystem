@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest a capability or a new provider.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the situation, not just the API you have in mind.
+    validations: { required: true }
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like it to look like?
+      render: swift
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What have you tried instead?
+      description: Existing pieces — mappers, filters, validators, a custom tracker — may already cover it.

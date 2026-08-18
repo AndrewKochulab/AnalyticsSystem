@@ -11,7 +11,12 @@ import UIKit
 /// This is intentionally never executed — it is a type-checking fixture.
 public enum ProviderIntegration {
     public static func wireEverything() async throws -> AnalyticsSystem {
-        let analytics = AnalyticsSystem()
+        let analytics = AnalyticsSystem(
+            configuration: .init(
+                startupBuffer: .buffered(limit: 50),
+                diagnostics: { print("analytics: \($0)") }
+            )
+        )
 
         // A base mapping shared by all providers…
         let common = AnalyticsEventMapper()
@@ -30,7 +35,13 @@ public enum ProviderIntegration {
             }
             .overriding(common)
 
-        try await analytics.register(FirebaseTracker(), mapper: common)
+        // Firebase's own limits, enforced locally so violations surface as
+        // diagnostics instead of vanishing server-side.
+        try await analytics.register(
+            FirebaseTracker(),
+            mapper: common,
+            validator: .firebase
+        )
         try await analytics.register(MixpanelTracker(apiToken: "token"), mapper: common)
         try await analytics.register(BugsnagTracker(apiKey: "key"), mapper: common)
         try await analytics.register(
@@ -40,8 +51,10 @@ public enum ProviderIntegration {
         )
         try await analytics.register(ConsoleTracker())
 
+        await analytics.setGlobalProperties(["app_version": "2.1.0"])
         await analytics.start()
         analytics.track(SignUpEvent(method: .email))
+        await analytics.flushProviders()
         await analytics.logIn(user: AnalyticsUser(id: "user-1", email: "a@example.com"))
         await analytics.logOut()
         await analytics.setEnabled(false)

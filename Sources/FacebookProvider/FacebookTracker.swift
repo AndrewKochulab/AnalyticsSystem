@@ -90,6 +90,10 @@ public final class FacebookTracker: AnalyticsTracker {
         AppEvents.shared.clearUserData()
     }
 
+    public func flushPendingEvents() async {
+        AppEvents.shared.flush()
+    }
+
     public func record(_ record: AnalyticsRecord) async {
         AppEvents.shared.logEvent(
             AppEvents.Name(record.name),

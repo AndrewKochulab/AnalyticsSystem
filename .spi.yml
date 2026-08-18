@@ -1,0 +1,6 @@
+version: 1
+builder:
+  configs:
+    # Swift Package Index builds with default traits, which is the core-only,
+    # dependency-free configuration we most want validated.
+    - documentation_targets: [AnalyticsSystem]

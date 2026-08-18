@@ -5,6 +5,56 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-08-18
+
+Additive throughout — 2.0.0 code keeps compiling. The two fixes below are behaviour
+changes, and both replace silent data loss with delivery.
+
+### Fixed
+
+- **Events tracked before any tracker was registered were silently lost.** That is
+  exactly the app-launch case: anything reported before `register` returned went
+  nowhere, with no diagnostic. They are now held and replayed.
+- **Events could reach a provider before its SDK was initialised.** `track` before
+  `start()` called `record()` on a tracker that had never been started — Firebase
+  logging before `FirebaseApp.configure()`, Mixpanel discarding the event internally.
+  Delivery now never precedes `start()`.
+
+  Both are governed by ``AnalyticsStartupBuffer``, which holds up to 100 events by
+  default and replays them in order. Set `.disabled` for the previous behaviour.
+
+### Added
+
+- **Global properties.** `setGlobalProperties(_:)` merges attributes into every
+  record; event attributes win on key conflict. For app version, locale, build,
+  experiment bucket.
+- **Diagnostics.** `AnalyticsDiagnostic` plus a handler on `Configuration` reports
+  every event the system buffers, drops, rejects or rewrites. Previously all of these
+  were invisible — an event that never sent looked identical to one never tracked.
+- **Record validation.** `AnalyticsRecordValidator`, per registration, with
+  `.firebase` shipped in `FirebaseProvider` encoding Firebase's real limits (40-char
+  names, 25 parameters, 100-char values, reserved `firebase_`/`google_`/`ga_`
+  prefixes). Firebase discards violations server-side and reports nothing, so these
+  were previously undebuggable.
+- **Provider flush.** `flushPendingEvents()` on `AnalyticsTracker` (default no-op),
+  surfaced as `AnalyticsSystem.flushProviders()`, wired to Mixpanel and Facebook. For
+  backgrounding and termination.
+- DocC documentation catalog with two articles, published to GitHub Pages.
+- `.spi.yml` for Swift Package Index.
+- `CONTRIBUTING.md`, `SECURITY.md`, issue and PR templates, `CODEOWNERS`, Dependabot.
+- Code coverage reporting in CI, and a job that keeps DocC building.
+
+### Changed
+
+- Test coverage raised from 71.9% to 87.8% of lines (92.3% of regions); 92 tests
+  across 17 suites, up from 57 across 11.
+
+### Note on documentation tooling
+
+DocC is built with `xcodebuild docbuild` rather than `swift-docc-plugin`, because the
+plugin appears in a default `swift package resolve` and would break this package's
+zero-dependency guarantee. CI asserts that guarantee on every run.
+
 ## [2.0.0] - 2026-08-18
 
 A full rewrite. 2.0.0 is a breaking release; see [MIGRATION.md](MIGRATION.md).
@@ -99,5 +149,6 @@ A full rewrite. 2.0.0 is a breaking release; see [MIGRATION.md](MIGRATION.md).
 
 Initial release.
 
+[2.1.0]: https://github.com/AndrewKochulab/AnalyticsSystem/compare/2.0.0...2.1.0
 [2.0.0]: https://github.com/AndrewKochulab/AnalyticsSystem/compare/1.0.0...2.0.0
 [1.0.0]: https://github.com/AndrewKochulab/AnalyticsSystem/releases/tag/1.0.0

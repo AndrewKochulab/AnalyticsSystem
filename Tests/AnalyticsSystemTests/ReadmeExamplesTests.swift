@@ -153,3 +153,74 @@ struct ReadmeExamplesTests {
         #expect(await spy.recordedEventNames == ["sign_up"])
     }
 }
+
+// MARK: - 2.1.0 additions
+
+@Suite("ReadmeExamples2_1")
+struct ReadmeExamples21Tests {
+    /// "Attributes on every event".
+    @Test("Global properties reach every record, with events winning")
+    func globalProperties() async throws {
+        let analytics = AnalyticsSystem.makeTestSystem()
+        let spy = SpyTracker(id: "spy")
+        try await analytics.register(spy)
+
+        await analytics.setGlobalProperties([
+            "app_version": "2.1.0",
+            "locale": "en_US"
+        ])
+        analytics.track(ReadmePurchaseEvent())
+        await analytics.flush()
+
+        let record = try #require(await spy.recordedEvents.first)
+        #expect(record.payload["app_version"] == .string("2.1.0"))
+        #expect(record.payload["locale"] == .string("en_US"))
+    }
+
+    /// "Seeing what you lose".
+    @Test("The documented diagnostics handler receives drops")
+    func diagnosticsHandler() async throws {
+        let recorder = DiagnosticsRecorder()
+        let analytics = AnalyticsSystem(
+            configuration: .init(
+                store: InMemoryAnalyticsStore(),
+                startupBuffer: .disabled,
+                diagnostics: recorder.handler
+            )
+        )
+        try await analytics.register(SpyTracker(id: "spy"))
+
+        await analytics.setEnabled(false)
+        analytics.track(ReadmePurchaseEvent())
+        await analytics.flush()
+
+        #expect(!recorder.recorded.isEmpty)
+    }
+
+    /// "Flushing before the app goes away".
+    @Test("flushProviders reaches providers")
+    func flushProviders() async throws {
+        let analytics = AnalyticsSystem.makeTestSystem()
+        let spy = SpyTracker(id: "spy")
+        try await analytics.register(spy)
+
+        await analytics.flushProviders()
+
+        #expect(await spy.recordedCalls.contains(.flushPendingEvents))
+    }
+
+    /// "3. Track" — the documented pre-start buffering behaviour.
+    @Test("Launch-time events survive until start()")
+    func launchEventsSurvive() async throws {
+        let analytics = AnalyticsSystem.makeTestSystem(startupBuffer: .default)
+
+        analytics.track(ReadmePurchaseEvent())
+
+        let spy = SpyTracker(id: "spy")
+        try await analytics.register(spy)
+        await analytics.start()
+        await analytics.flush()
+
+        #expect(await spy.recordedEventNames == ["purchase"])
+    }
+}

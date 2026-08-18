@@ -1,0 +1,51 @@
+name: Bug report
+description: Something behaves differently from what it documents.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: if events are not arriving, attach a diagnostics handler first —
+        it reports every event the system drops or rewrites, which is usually the answer.
+
+        ```swift
+        AnalyticsSystem(configuration: .init(diagnostics: { print("analytics: \($0)") }))
+        ```
+  - type: input
+    id: version
+    attributes:
+      label: AnalyticsSystem version
+      placeholder: "2.1.0"
+    validations: { required: true }
+  - type: dropdown
+    id: manager
+    attributes:
+      label: Installed via
+      options: [Swift Package Manager, CocoaPods]
+    validations: { required: true }
+  - type: input
+    id: traits
+    attributes:
+      label: Enabled traits / subspecs
+      placeholder: "Firebase, Mixpanel"
+  - type: input
+    id: platform
+    attributes:
+      label: Platform and Xcode version
+      placeholder: "iOS 18.2, Xcode 26.6"
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Smallest code that reproduces it
+      render: swift
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics output, if any
+      render: text

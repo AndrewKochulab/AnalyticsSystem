@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'AnalyticsSystem'
-  s.version          = '2.0.0'
+  s.version          = '2.1.0'
   s.summary          = 'Multi-provider analytics for Apple platforms, with a dependency-free core.'
 
   s.description      = <<-DESC

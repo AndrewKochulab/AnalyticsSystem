@@ -4,9 +4,11 @@ import Foundation
 enum AnalyticsCommand: Sendable {
     case start(AnalyticsStartContext)
     case setEnabled(Bool)
+    case setGlobalProperties(AnalyticsPayload)
     case logIn(AnalyticsUser)
     case logOut
     case event(AnalyticsEventEnvelope)
+    case flushProviders
     /// Carries no work; used by `flush()` to observe that everything queued
     /// before it has been delivered.
     case barrier

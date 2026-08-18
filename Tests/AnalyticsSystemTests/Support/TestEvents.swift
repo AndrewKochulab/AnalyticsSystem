@@ -60,13 +60,43 @@ final class SpyLogSink: AnalyticsLogSink, @unchecked Sendable {
 
 extension AnalyticsSystem {
     /// A system wired to in-memory persistence and a deterministic ID generator.
+    ///
+    /// The startup buffer defaults to `.disabled` here so that suites about dispatch,
+    /// filtering or mapping stay focused on that behaviour rather than each having to
+    /// call `start()` first. The production default — and the buffer itself — is
+    /// covered by `StartupBufferTests`.
     static func makeTestSystem(
         store: any AnalyticsStore = InMemoryAnalyticsStore(),
-        idGenerator: @escaping @Sendable () -> AnalyticsID = AnalyticsID.random
+        idGenerator: @escaping @Sendable () -> AnalyticsID = AnalyticsID.random,
+        startupBuffer: AnalyticsStartupBuffer = .disabled,
+        diagnostics: AnalyticsDiagnosticHandler? = nil
     ) -> AnalyticsSystem {
         AnalyticsSystem(
-            configuration: Configuration(store: store, idGenerator: idGenerator)
+            configuration: Configuration(
+                store: store,
+                idGenerator: idGenerator,
+                startupBuffer: startupBuffer,
+                diagnostics: diagnostics
+            )
         )
+    }
+}
+
+/// Collects diagnostics for assertion.
+final class DiagnosticsRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [AnalyticsDiagnostic] = []
+
+    var handler: AnalyticsDiagnosticHandler {
+        { [self] diagnostic in
+            lock.lock(); defer { lock.unlock() }
+            storage.append(diagnostic)
+        }
+    }
+
+    var recorded: [AnalyticsDiagnostic] {
+        lock.lock(); defer { lock.unlock() }
+        return storage
     }
 }
 

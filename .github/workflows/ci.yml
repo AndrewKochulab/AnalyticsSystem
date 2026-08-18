@@ -34,7 +34,18 @@ jobs:
           fi
           echo "Default install resolves zero third-party dependencies."
       - run: swift build
-      - run: swift test
+      - run: swift test --enable-code-coverage
+
+      - name: Coverage summary
+        run: |
+          BIN=$(swift build --show-bin-path)
+          PROF="$BIN/codecov/default.profdata"
+          XCTEST=$(find "$BIN" -name '*.xctest' | head -1)
+          xcrun llvm-cov report \
+            "$XCTEST/Contents/MacOS/$(basename "$XCTEST" .xctest)" \
+            -instr-profile "$PROF" \
+            -ignore-filename-regex='(Tests|\.build)/' \
+            | tee -a "$GITHUB_STEP_SUMMARY"
 
   # Proves the cross-platform guards hold. Cross-compiling against each SDK avoids
   # depending on which simulator runtimes a runner image happens to ship.
@@ -92,6 +103,20 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 17' \
             -skipMacroValidation \
             -quiet
+
+  # Documentation must keep building, and it must keep building *without* the
+  # swift-docc-plugin — that plugin would show up in a default `swift package
+  # resolve` and break the zero-dependency promise the `core` job asserts.
+  docs:
+    name: DocC
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          xcodebuild docbuild \
+            -scheme AnalyticsSystem \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/docs"
 
   lint:
     name: SwiftLint

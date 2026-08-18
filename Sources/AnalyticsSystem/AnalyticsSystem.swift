@@ -36,18 +36,32 @@ public final class AnalyticsSystem: Sendable {
         public var idGenerator: @Sendable () -> AnalyticsID
         public var queuePolicy: QueuePolicy
 
+        /// How events tracked before ``AnalyticsSystem/start(with:)`` are handled.
+        public var startupBuffer: AnalyticsStartupBuffer
+
+        /// Receives every event the system discards or rewrites. Analytics failures
+        /// are otherwise invisible: a dropped event looks exactly like one that was
+        /// never sent.
+        public var diagnostics: AnalyticsDiagnosticHandler?
+
         /// - Parameters:
         ///   - store: Backing store for the anonymous identity.
         ///   - idGenerator: Anonymous ID factory. Override in tests for determinism.
         ///   - queuePolicy: Defaults to ``QueuePolicy/unbounded``.
+        ///   - startupBuffer: Defaults to holding up to 100 pre-`start()` events.
+        ///   - diagnostics: Optional sink for discarded or rewritten events.
         public init(
             store: any AnalyticsStore = UserDefaultsAnalyticsStore(),
             idGenerator: @escaping @Sendable () -> AnalyticsID = AnalyticsID.random,
-            queuePolicy: QueuePolicy = .unbounded
+            queuePolicy: QueuePolicy = .unbounded,
+            startupBuffer: AnalyticsStartupBuffer = .default,
+            diagnostics: AnalyticsDiagnosticHandler? = nil
         ) {
             self.store = store
             self.idGenerator = idGenerator
             self.queuePolicy = queuePolicy
+            self.startupBuffer = startupBuffer
+            self.diagnostics = diagnostics
         }
     }
 
@@ -58,6 +72,7 @@ public final class AnalyticsSystem: Sendable {
 
     /// Read on the synchronous `track` path, so it is a lock rather than actor state.
     private let enabled = Locked<Bool>(true)
+    private let diagnostics: AnalyticsDiagnosticHandler?
 
     public init(configuration: Configuration = Configuration()) {
         let registry = AnalyticsRegistry()
@@ -79,7 +94,14 @@ public final class AnalyticsSystem: Sendable {
         )
         self.continuation = continuation
 
-        let dispatcher = AnalyticsDispatcher(registry: registry, identity: identity)
+        self.diagnostics = configuration.diagnostics
+
+        let dispatcher = AnalyticsDispatcher(
+            registry: registry,
+            identity: identity,
+            startupBuffer: configuration.startupBuffer,
+            diagnostics: configuration.diagnostics
+        )
         self.pump = Task.detached(priority: .utility) {
             await dispatcher.run(stream)
         }
@@ -95,13 +117,24 @@ public final class AnalyticsSystem: Sendable {
     /// Registers a tracker along with how it should render and filter events.
     ///
     /// - Throws: ``AnalyticsError/duplicateTracker(_:)`` if the identifier is taken.
+    /// - Parameters:
+    ///   - mapper: How this provider renders events. Defaults to the event's own.
+    ///   - filter: Which events reach it. Defaults to all.
+    ///   - validator: Provider-specific constraints, e.g. `.firebase`. Rejections are
+    ///     reported through the diagnostics handler rather than failing silently.
     public func register(
         _ tracker: some AnalyticsTracker,
         mapper: AnalyticsEventMapper = AnalyticsEventMapper(),
-        filter: AnalyticsEventFilter = .all
+        filter: AnalyticsEventFilter = .all,
+        validator: AnalyticsRecordValidator = .default
     ) async throws {
         try await registry.register(
-            AnalyticsRegistration(tracker: tracker, mapper: mapper, filter: filter)
+            AnalyticsRegistration(
+                tracker: tracker,
+                mapper: mapper,
+                filter: filter,
+                validator: validator
+            )
         )
     }
 
@@ -147,6 +180,22 @@ public final class AnalyticsSystem: Sendable {
         await enqueueAwaiting(.logOut)
     }
 
+    /// Attributes merged into every subsequent record.
+    ///
+    /// Event attributes win on key conflict, so an event can always override a global.
+    /// Typical use is app version, build, locale, or an experiment bucket.
+    public func setGlobalProperties(_ properties: AnalyticsPayload) async {
+        await enqueueAwaiting(.setGlobalProperties(properties))
+    }
+
+    /// Asks every provider's SDK to send whatever it has buffered.
+    ///
+    /// Distinct from ``flush()``, which drains only this library's queue. Call this
+    /// when the app is backgrounding or about to terminate.
+    public func flushProviders() async {
+        await enqueueAwaiting(.flushProviders)
+    }
+
     /// Returns once every command enqueued before this call has been delivered.
     public func flush() async {
         await enqueueAwaiting(.barrier)
@@ -158,7 +207,10 @@ public final class AnalyticsSystem: Sendable {
     ///
     /// Synchronous, non-throwing, and callable from any isolation domain.
     public func track(_ event: some AnalyticsEvent) {
-        guard enabled.withLock({ $0 }) else { return }
+        guard enabled.withLock({ $0 }) else {
+            diagnostics?(.droppedWhileDisabled(event.name))
+            return
+        }
         continuation.yield(
             AnalyticsWorkItem(command: .event(AnalyticsEventEnvelope(event)))
         )
