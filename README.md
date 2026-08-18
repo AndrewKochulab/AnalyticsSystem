@@ -1,178 +1,226 @@
-# Analytics System
+# AnalyticsSystem
 
-The main idea of `AnalyticsSystem` dependency is to provide light API to configure multi-providers inside your app. 
+[![CI](https://github.com/AndrewKochulab/AnalyticsSystem/actions/workflows/ci.yml/badge.svg)](https://github.com/AndrewKochulab/AnalyticsSystem/actions/workflows/ci.yml)
+[![Swift 6.1](https://img.shields.io/badge/Swift-6.1-orange.svg)](https://swift.org)
+[![Platforms](https://img.shields.io/badge/platforms-iOS%2015%20%7C%20macOS%2012%20%7C%20tvOS%2015%20%7C%20watchOS%208%20%7C%20visionOS%201-lightgrey.svg)](https://swift.org)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+Fan analytics events out to any number of providers behind one small API.
+
+- **The core has zero third-party dependencies.** Providers are opt-in
+  [package traits](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0450-swiftpm-package-traits.md),
+  so a default install resolves *nothing* — not Firebase, not its transitive tree.
+- **Built for Swift 6 strict concurrency.** No `@unchecked Sendable`, no locks in your code, no main-thread work.
+- **`track` is synchronous.** Call it from a view model, a background task, anywhere. No `await`.
+- **Ordering is guaranteed.** A `logIn` followed by a `track` reaches every provider in that order.
 
 ## Providers
 
-An `AnalyticsSystem` helps you easily add multiple providers in 10 lines of code. There is already built-in providers:
-- Mixpanel
-- Bugsnag
-- Facebook
-- Firebase
+| Provider | Trait | Platforms | Crash reporting |
+|---|---|---|---|
+| Firebase Analytics + Crashlytics | `Firebase` | iOS, macOS, tvOS, visionOS | ✅ |
+| Facebook App Events | `Facebook` | iOS | — |
+| Mixpanel | `Mixpanel` | all | — |
+| Bugsnag | `Bugsnag` | all | ✅ |
+| Console / `os.Logger` | *(built in)* | all | — |
 
-## How to use
-### Installation
+## Installation
 
-To add `AnalyticsSystem` to a  [Swift Package Manager](https://swift.org/package-manager/)  based project, add:
+### Swift Package Manager
 
-````swift
-.package(url: "https://github.com/AndrewKochulab/AnalyticsSystem.git")
-````
+Core only — resolves no third-party packages at all:
 
-Cocoapods:
+```swift
+.package(url: "https://github.com/AndrewKochulab/AnalyticsSystem.git", from: "2.0.0")
+```
 
-````
-pod 'AnalyticsSystem/Core'
-````
+Opt in to the providers you actually ship. Anything you leave out is never even cloned:
 
-You can also import some provider, like:
+```swift
+.package(
+    url: "https://github.com/AndrewKochulab/AnalyticsSystem.git",
+    from: "2.0.0",
+    traits: ["Firebase", "Mixpanel"]
+)
+```
 
-````
-pod 'AnalyticsSystem/Bugsnag'
+> **Requires Swift 6.1 / Xcode 16.3 or newer** on the consuming side — package traits are
+> what make the zero-dependency core possible. If you are on an older toolchain, stay on
+> [1.0.0](https://github.com/AndrewKochulab/AnalyticsSystem/tree/1.0.0).
+
+### CocoaPods
+
+```ruby
+pod 'AnalyticsSystem'                # Core only
+pod 'AnalyticsSystem/Firebase'       # + Firebase
 pod 'AnalyticsSystem/Facebook'
-````
+pod 'AnalyticsSystem/Mixpanel'
+pod 'AnalyticsSystem/Bugsnag'
+```
 
-### Example
+## Usage
 
-#### Configure an analytics system
+### 1. Describe your events
 
-````swift
+An event is a plain `Sendable` value that knows its own name and attributes.
+
+```swift
 import AnalyticsSystem
-	
-let analyticsSystem = AnalyticsSystem()
-    
-try analyticsSystem.configureTrackers { cfg in 
-  let commonEventsFactory = AnalyticsTrackerEventsFactory()
 
-  try cfg.addTracker(MixpanelTracker(apiToken: "your_api_token", eventsFactory: commonEventsFactory))
-  try cfg.addTracker(BugsnagTracker(apiToken: "your_api_token", eventsFactory: commonEventsFactory))
-
-  let fbTracker = FacebookTracker(eventsFactory: FacebookTrackerEventsFactory())
-  fbTracker.isEventAvailable = { eventType in
-    eventType == .signUp
-  }
-            
-  try cfg.addTracker(fbTracker)
+enum RegistrationMethod: String, AnalyticsValueConvertible {
+    case email = "Email"
+    case facebook = "Facebook"
 }
-	
-analyticsSystem.initialize()
-````
 
-#### Create events
-
-````swift
-enum RegistrationEventMethod: String {
-  case email = "Email",
-  facebook = "Facebook",
-  twitter = "Twitter"
-}
-	
 struct SignUpEvent: AnalyticsEvent {
-  let userId: String
-  let method: RegistrationEventMethod 
-  var type: AnalyticsEventType { .signUp }
-     
-  init(
-    userId: String,
-    method: RegistrationEventMethod
-  ) {
-    self.userId = userId
-    self.method = method
-  }
-}
-	
-final class AnalyticsTrackerEventsFactory {
-  func signUpEventBuilder(event: SignUpEvent) -> AnalyticsEventBuilder { 
-    .init(
-      name: "sign_up",
-      attributes: [
-        "user_id" : event.userId,
-        "method" : event.method.rawValue
-      ]
-    )
-  }
-}
-````
+    static let category: AnalyticsEventCategory = .authentication
 
-#### Track events
+    let userID: String
+    let method: RegistrationMethod
 
-````swift
-analyticsSystem.track(
-  event: SignUpEvent(
-    userId: "user_identifier",
-    method: .email
-  )
+    var name: AnalyticsEventName { "sign_up" }
+    var payload: AnalyticsPayload {
+        ["user_id": .string(userID), "method": method.analyticsValue]
+    }
+}
+```
+
+`AnalyticsPayload` is a typed bag of `AnalyticsValue`, not `[String: Any]` — which is
+what lets events cross concurrency domains, and what turns "the SDK didn't recognise
+that value" from silent data loss into an explicit, tested conversion.
+
+### 2. Register providers
+
+```swift
+let analytics = AnalyticsSystem()
+
+try await analytics.register(ConsoleTracker())
+try await analytics.register(MixpanelTracker(apiToken: "your_token"))
+try await analytics.register(BugsnagTracker(apiKey: "your_key"))
+
+await analytics.start()
+```
+
+### 3. Track
+
+```swift
+analytics.track(SignUpEvent(userID: "user-1", method: .email))
+```
+
+That's it — synchronous, non-throwing, callable from any isolation domain.
+
+### Sending only some events to a provider
+
+Filters are values, and they compose:
+
+```swift
+try await analytics.register(
+    FacebookTracker(),
+    filter: .categories(.authentication) || .only(PurchaseEvent.self)
+)
+```
+
+### Rendering an event differently for one provider
+
+Override per event type by composing mappers. No subclassing:
+
+```swift
+let common = AnalyticsEventMapper()
+
+let facebookMapper = AnalyticsEventMapper()
+    .mapping(for: SignUpEvent.self) { event in
+        AnalyticsRecord(
+            name: "fb_mobile_complete_registration",
+            attributes: ["fb_registration_method": event.method]
+        )
+    }
+    .overriding(common)
+
+try await analytics.register(FacebookTracker(), mapper: facebookMapper)
+```
+
+Returning `nil` from a mapping — or using `.ignoring(SomeEvent.self)` — drops that
+event for that provider only.
+
+### Identity
+
+```swift
+await analytics.logIn(
+    user: AnalyticsUser(id: "user-1", firstName: "Ada", email: "ada@example.com")
 )
 
-analyticsSystem.track(event: CrashRecoveryEvent())
-analyticsSystem.track(event: OnboardingFinishEvent())
-````
+await analytics.logOut()   // resets every provider and rotates the anonymous ID
+```
 
-#### Update builder for specific provider
+### Crash reporting
 
-````swift
-final class FacebookTrackerEventsFactory: AnalyticsTrackerEventsFactory {   
-  override func signUpEventBuilder(event: SignUpEvent) -> AnalyticsEventBuilder {
-    .init(
-      name: AppEvents.Name.completedRegistration.rawValue,
-      attributes: [
-        "user_id" : event.userId,
-        AppEvents.ParameterName.registrationMethod.rawValue : event.method.rawValue
-      ]
-    )
-  }
+```swift
+if await analytics.didCrashOnLastLaunch() {
+    // Firebase and Bugsnag both answer this.
 }
-````
+```
 
-#### Create own analytics provider
+### Facebook and UIKit launch options
 
-````swift
-import AnalyticsSystem
-import FirebaseAnalytics
-import FirebaseCrashlytics
+The core never touches UIKit. The one provider that needs launch options takes them
+directly from your app delegate:
 
-final class FirebaseTracker: FactoryAnalyticsTracker<AnalyticsTrackerEventsFactory> {
-  private var crashlytics: Crashlytics {
-    .crashlytics()
-  }
-    
-  override func initialize(with options: LaunchOptions? = nil) {
-    FirebaseApp.configure()
-  }
-    
-  override func setEnabled(_ isEnabled: Bool) {
-    Analytics.setAnalyticsCollectionEnabled(isEnabled)
-  }
-    
-  override func logIn(user: AnalyticsUser) {
-    Analytics.setUserID(user.id)
-    crashlytics.setUserID(user.id)
-  }
-    
-  override func logOut(user: AnalyticsUser) {
-    Analytics.setUserID(nil)
-    crashlytics.setUserID("")
-  }
-  
-  override func track(eventBuilder: AnalyticsEventBuilder) {
-    Analytics.logEvent(
-      eventBuilder.name,
-      parameters: eventBuilder.attributes
-    )
-  }
+```swift
+func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]?
+) -> Bool {
+    facebookTracker.handleLaunch(options: options)
+    Task { await analytics.start() }
+    return true
 }
-````
+```
 
+### Writing your own provider
 
-## Contribution
+Implement only what your destination supports — every requirement has a default no-op:
 
-⭐️ If you like what you see, star us on GitHub.
+```swift
+struct MyTracker: AnalyticsTracker {
+    let id: AnalyticsTrackerID = "my-tracker"
 
-Find a bug, a typo, or something that’s not documented well? We’d love for you to open an issue telling me what I can improve!
+    func record(_ record: AnalyticsRecord) async {
+        // send record.name and record.payload
+    }
+}
+```
 
-Contributions are welcome, and they are greatly appreciated!
+Add `CrashReportingTracker` if it also observes crashes.
 
+## Testing
+
+Inject an in-memory store and a deterministic ID generator, and use `flush()` as an
+exact barrier instead of sleeping:
+
+```swift
+let analytics = AnalyticsSystem(
+    configuration: .init(
+        store: InMemoryAnalyticsStore(),
+        idGenerator: { AnalyticsID(rawValue: "fixed") }
+    )
+)
+
+analytics.track(SignUpEvent(userID: "1", method: .email))
+await analytics.flush()   // returns only once every provider has been called
+```
+
+## Migrating from 1.0.0
+
+2.0.0 is a deliberate breaking release — see [MIGRATION.md](MIGRATION.md) for a
+symbol-by-symbol map. 1.0.0 is untouched and remains installable.
+
+## Contributing
+
+Bug reports and pull requests are welcome. `swift test` should be green and
+`swiftlint lint --strict` clean before you open one.
+
+⭐️ If you find this useful, star the repo.
 
 ## License
 
-This code is distributed under the MIT license. See the  `LICENSE`  file for more info.
+MIT. See [LICENSE](LICENSE).
