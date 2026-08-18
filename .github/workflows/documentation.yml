@@ -22,7 +22,7 @@ jobs:
     name: Build DocC
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Deliberately built with xcodebuild rather than swift-docc-plugin: the plugin
       # would appear in a default `swift package resolve`, and this package promises

@@ -20,7 +20,7 @@ jobs:
     name: Core build & test
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Show toolchain
         run: swift --version
       - name: Assert the default trait set pulls no dependencies
@@ -62,7 +62,7 @@ jobs:
           - { name: visionOS, sdk: xrsimulator,      triple: arm64-apple-xros1.0-simulator }
           - { name: macOS,    sdk: macosx,           triple: arm64-apple-macosx12.0 }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build for ${{ matrix.name }}
         run: |
           swift build \
@@ -76,7 +76,7 @@ jobs:
     name: Providers against real SDKs
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cache SwiftPM artifacts
         uses: actions/cache@v4
@@ -111,7 +111,7 @@ jobs:
     name: DocC
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: |
           xcodebuild docbuild \
             -scheme AnalyticsSystem \
@@ -122,7 +122,7 @@ jobs:
     name: SwiftLint
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: brew install swiftlint
       - run: swiftlint lint --strict
 
@@ -130,7 +130,7 @@ jobs:
     name: CocoaPods lint
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Lint the Core subspec
         # Only Core is linted here: the provider subspecs would each pull a full
         # vendor SDK from trunk, which turns a lint into a multi-minute download.
