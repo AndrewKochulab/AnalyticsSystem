@@ -45,7 +45,7 @@ jobs:
           # Land visitors on the documentation root rather than a 404.
           echo '<script>window.location.href="/AnalyticsSystem/documentation/analyticssystem"</script>' > _site/index.html
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
